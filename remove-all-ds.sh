@@ -4,15 +4,15 @@
 # remove-ds.pl script. Names of instances are pulled from /etc/dirsrv/* and 
 # those that end with "removed" are ignored
 #
-# Author: 	Jan Rusnacko
-# Date: 	21.04.2013
+# Author:   Jan Rusnacko
+# Date:     21.04.2013
 
 remove-all-ds()
 {
-	LOGFILE=`mktemp`.log
-	RESULT=0
+    LOGFILE=`mktemp`.log
+    RESULT=0
 
-	# Remove all instances of directory server
+    # Remove all instances of directory server
     for INST in /etc/dirsrv/slapd-*; do
         if [ ! `echo $INST | grep ".removed"` ]; then
             sudo remove-ds.pl -i $INST &>$LOGFILE
@@ -23,9 +23,9 @@ remove-all-ds()
     done
 
     if [ $RESULT != 0 ];then
-       	echo "Error: logfile in $LOGFILE"
+        echo "Error: logfile in $LOGFILE"
     else
-       	rm $LOGFILE
+        rm $LOGFILE
     fi
 
     return $RESULT
