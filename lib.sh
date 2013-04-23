@@ -85,3 +85,59 @@ remove-all-ds()
 
     return $RESULT
 }
+
+
+generate-certs()
+{
+    CERTDIR="$HOME/certificates"
+    CA="$HOME/ca"
+    NOISE=$CA/noise.txt
+    PWDFILE=$CA/pwdfile.txt
+
+    if [ ! -d $CERTDIR ]; then 
+        mkdir $CERTDIR
+    fi
+
+    # Populate CA directory
+    rm -rf $CA
+    if [ ! -d $CA ]; then 
+        mkdir $CA
+    fi
+    echo "Secret123" > $PWDFILE
+    dd if=/dev/urandom bs=100 count=1 of=$NOISE
+
+    # Create CA database
+    cd $CA
+    echo "certutil -d . -N -f $PWDFILE"
+    certutil -d . -N -f $PWDFILE
+
+    # Generate CA cert
+    echo "generate CA"
+    echo "y\n\ny\n" | certutil -S -d . -n "CA Cert" -s "cn=CA Cert" -2 -x -t "CT,," -m 1000 -v 120 -k rsa -g 1024 -f $PWDFILE -z $NOISE
+
+    # Export CA Cert
+    certutil -d . -L -n "CA Cert" -a > $CERTDIR/cacert.asc
+
+    # Create admin server request
+    cd /etc/dirsrv/admin-serv
+    certutil -d . -R -s "cn=admin" -a -o "$CERTDIR/admin.req" -k rsa -g 1024 -f $PWDFILE -z $NOISE
+
+    # Create requests for dirsrv instances
+    for INST in /etc/dirsrv/slapd-*; do
+        if [ ! `echo $INST | grep ".removed"` ]; then
+            cd $INST
+            NAME=`echo $INST | sed "s/.*slapd-\(.*\)/\1/"`
+            certutil -d . -R -s "cn=$NAME" -a -o "$CERTDIR/$NAME.req" -k rsa -g 1024 -f $PWDFILE -z $NOISE
+        fi
+    done
+
+    # Sign requests and create certificates
+    cd $CA
+    certutil -C -d . -c "CA Cert" -a -i "$CERTDIR/admin.req" -o "$CERTDIR/admin.asc" -m 1001 -v 120 -f $PWDFILE    
+    i=1002
+    for INST in "$CERTDIR/*.req"; do
+        NAME=`echo $INST | sed "s/.*\/\(.*\).req/\1/"`
+        certutil -C -d . -c "CA Cert" -a -i "$CERTDIR/$NAME.req" -o "$CERTDIR/$NAME.asc" -m $i -v 120 -f $PWDFILE
+        i=$((i+1))
+    done
+}
