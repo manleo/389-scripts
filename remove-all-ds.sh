@@ -8,6 +8,6 @@
 # Date:     21.04.2013
 
 # Include library
-. lib.sh
+. `dirname $0`/lib.sh
 
 remove-all-ds

@@ -7,7 +7,7 @@
 # Date:     21.4.2013
 
 # Include library
-. lib.sh
+. `dirname $0`/lib.sh
 
 INSTANCE="dstet"
 SUFFIX="o=my.com"
