@@ -141,3 +141,26 @@ generate-certs()
         i=$((i+1))
     done
 }
+
+add_users()
+{
+    HOST=${1:-"localhost"}
+    PORT=${2:-389}
+    ROOTDN=${3:-"cn=directory manager"}
+    ROOTDNPW=${4:-"Secret123"}
+    TEMPLATE_NAME=${5:-"tuser"}
+    SUFFIX=${6:-"ou=people,dc=example,dc=com"}
+    NUMBER=${7:-100}
+
+    for i in $(seq 1 $NUMBER); do
+        ldapmodify -h $HOST -p $PORT -D "$ROOTDN" -w "$ROOTDNPW" -a <<EOF
+dn: uid=$TEMPLATE_NAME$i,$SUFFIX
+objectClass: top
+objectClass: inetOrgPerson
+objectClass: person
+cn: $TEMPLATE_NAME$i
+sn: $TEMPLATE_NAME$i
+uid: $TEMPLATE_NAME$i
+EOF
+    done
+}
